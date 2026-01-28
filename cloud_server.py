@@ -3,26 +3,33 @@ import os
 
 app = Flask(__name__)
 
-# Directory to store encrypted updates
+# ==============================
+# Cloud storage directory
+# ==============================
 CLOUD_DIR = "cloud_storage"
 os.makedirs(CLOUD_DIR, exist_ok=True)
 
+# ==============================
+# Health check
+# ==============================
 @app.route("/")
 def home():
     return "FHE Cloud Storage Running"
 
+# ==============================
+# Upload encrypted FHE updates
+# ==============================
 @app.route("/upload", methods=["POST"])
 def upload_encrypted_update():
     round_no = request.form.get("round")
-
     weights_file = request.files.get("weights")
     bias_file = request.files.get("bias")
 
     if not round_no or not weights_file or not bias_file:
         return jsonify({"error": "Missing data"}), 400
 
-    weights_path = f"{CLOUD_DIR}/weights_round_{round_no}.bin"
-    bias_path = f"{CLOUD_DIR}/bias_round_{round_no}.bin"
+    weights_path = os.path.join(CLOUD_DIR, f"weights_round_{round_no}.bin")
+    bias_path = os.path.join(CLOUD_DIR, f"bias_round_{round_no}.bin")
 
     weights_file.save(weights_path)
     bias_file.save(bias_path)
@@ -34,5 +41,16 @@ def upload_encrypted_update():
         "round": round_no
     }), 200
 
+# ==============================
+# LIST STORED ENCRYPTED FILES
+# ==============================
+@app.route("/files", methods=["GET"])
+def list_files():
+    files = os.listdir(CLOUD_DIR)
+    return jsonify(files), 200
+
+# ==============================
+# Run server (Render will override port)
+# ==============================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
