@@ -42,15 +42,28 @@ def upload_encrypted_update():
     }), 200
 
 # ==============================
-# LIST STORED ENCRYPTED FILES
+# LIST FILES IN NEAT JSON FORMAT
 # ==============================
 @app.route("/files", methods=["GET"])
 def list_files():
     files = os.listdir(CLOUD_DIR)
-    return jsonify(files), 200
+    result = {}
+
+    for file in files:
+        if "_round_" in file:
+            file_type = file.split("_round_")[0]     # weights / bias
+            round_no = file.split("_round_")[1].split(".")[0]
+            round_key = f"round_{round_no}"
+
+            if round_key not in result:
+                result[round_key] = {}
+
+            result[round_key][file_type] = file
+
+    return jsonify(result), 200
 
 # ==============================
-# Run server (Render will override port)
+# Run server (Render handles port)
 # ==============================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
